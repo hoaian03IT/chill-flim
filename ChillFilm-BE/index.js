@@ -41,8 +41,10 @@ connect();
 const auth_routes = require("./routes/auth.route.js");
 const user_routes = require("./routes/user.route.js");
 const { FilmController } = require("./controllers/film.controller.js");
-
+const find = require("./routes/search.route.js");
 app.use("/v1/auth", auth_routes);
 app.use("/v1/user", user_routes);
+app.use("/v1/film", FilmController.fetchFilmFromProvider);
+app.use("/v1/api", find);
 
 app.listen(3000, () => console.log("server is running ..."));

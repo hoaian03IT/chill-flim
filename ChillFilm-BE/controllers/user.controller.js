@@ -21,6 +21,7 @@ async function Register(req, res) {
         const saved_user = await user.save();
         res.status(200).json({ status: true, data: saved_user, message: "Registered successfully." });
     } catch (error) {
+        console.error("Error:", error);
         res.status(400).json({ status: false, message: "Registered failed." });
     }
 }
@@ -44,10 +45,10 @@ async function Login(req, res) {
 
         const { refresh_token, maxAge } = GenerateRefreshToken(user._id);
         res.cookie("refresh-token", refresh_token, {
-            maxAge: maxAge,
-            httpOnly: true,
-            secure: true,
-        })
+                maxAge: maxAge,
+                httpOnly: true,
+                secure: true,
+            })
             .status(200)
             .json({ status: true, message: "login success", data: { access_token } });
     } catch (error) {
@@ -61,7 +62,7 @@ async function RefreshToken(req, res) {
     try {
         const refreshToken = req.cookies["refresh-token"];
 
-        jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, async (err, userInfo) => {
+        jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, async(err, userInfo) => {
             if (err) {
                 console.error(err);
                 return;
@@ -77,22 +78,21 @@ async function RefreshToken(req, res) {
             // xoa refreshtoken khoi redis
             await redis_client.del(tokenKey);
 
-            const { refresh_token, maxAge } = GenerateRefreshToken(userInfo?.sub);
-            const access_token = jwt.sign({ sub: userInfo?.sub }, process.env.JWT_ACCESS_SECRET, {
+            const { refresh_token, maxAge } = GenerateRefreshToken(userInfo ?.sub);
+            const access_token = jwt.sign({ sub: userInfo ?.sub }, process.env.JWT_ACCESS_SECRET, {
                 expiresIn: process.env.JWT_ACCESS_TIME,
             });
 
             res.cookie("refresh-token", refresh_token, {
-                maxAge: maxAge,
-                httpOnly: true,
-                secure: true,
-            })
+                    maxAge: maxAge,
+                    httpOnly: true,
+                    secure: true,
+                })
                 .status(200)
                 .json({ messageCode: "REFRESH_TOKEN", token: access_token });
         });
     } catch (error) {
         console.error(error);
-
         res.status(400).json({ status: false, message: "Refresh failed." });
     }
 }
