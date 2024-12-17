@@ -31,4 +31,19 @@ const searchFilms = async(req, res) => {
     }
 };
 
-module.exports = { searchFilms };
+// New API to get 10 random films
+const getFilms = async(req, res) => {
+    try {
+        const films = await Film.aggregate([{ $sample: { size: 10 } }]);
+
+        if (films.length === 0) {
+            return res.status(404).json({ status: false, message: 'No films found.' });
+        }
+
+        return res.status(200).json({ status: true, data: films });
+    } catch (error) {
+        console.error('Error:', error);
+        return res.status(500).json({ status: false, message: 'Server error' });
+    }
+};
+module.exports = { searchFilms, getFilms };
