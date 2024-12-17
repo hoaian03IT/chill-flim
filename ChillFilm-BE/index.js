@@ -49,5 +49,9 @@ const payment_routes = require("./routes/payment.route.js");
 app.use("/v1/auth", auth_routes);
 app.use("/v1/user", user_routes);
 app.use("/v1/payment", payment_routes);
+const find = require("./routes/search.route.js");
+app.use("/v1/auth", auth_routes);
+app.use("/v1/user", user_routes);
+app.use("/v1/api", find);
 
 app.listen(3000, () => console.log("server is running ..."));
