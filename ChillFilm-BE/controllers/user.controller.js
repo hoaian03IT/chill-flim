@@ -39,7 +39,7 @@ async function Login(req, res) {
         }
 
         const access_token = jwt.sign({ sub: user._id }, process.env.JWT_ACCESS_SECRET, {
-            expiresIn: process.env.JWT_ACCESS_TIME,
+            expiresIn: "1d",
         });
 
         const { refresh_token, maxAge } = GenerateRefreshToken(user._id);
@@ -98,7 +98,7 @@ async function RefreshToken(req, res) {
 }
 
 function GenerateRefreshToken(user_id) {
-    let maxAge = 60 * 1000 * 60 * 24 * 30;
+    let maxAge = 60 * 60 * 24 * 30;
     const refresh_token = jwt.sign({ sub: user_id }, process.env.JWT_REFRESH_SECRET, {
         expiresIn: process.env.JWT_REFRESH_TIME,
     });
@@ -129,7 +129,7 @@ async function Logout(req, res) {
     const token = req.token;
 
     // remove the refresh token
-    await redis_client.del(user_id.toString());
+    await redis_client.del(`${user_id?.toString()}:refreshtoken:${refreshToken}`);
 
     // blacklist current access token
     await redis_client.set("BL_" + user_id.toString(), token);

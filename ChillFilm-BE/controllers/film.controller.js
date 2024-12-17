@@ -11,10 +11,8 @@ const http = axios.create({
 class FilmController {
     static async fetchFilmFromProvider() {
         try {
-            // https://image.tmdb.org/t/p/original/r8Ph5MYXL04Qzu4QBbq2KjqwtkQ.jpg
-
             let movies = [];
-            for (let i = 1; i <= 1; i++) {
+            for (let i = 41; i <= 60; i++) {
                 let response = await http.get(`https://api.themoviedb.org/3/movie/popular?page=${i}`); // fetch movies
                 for (let info of response.data.results) {
                     if (!info?.adult) {
@@ -53,18 +51,14 @@ class FilmController {
                             setTimeout(() => {
                                 console.log(movies);
                                 resolve();
-                            }, 1000);
+                            }, 500);
                         });
                     }
                 }
             }
 
             await filmModel.insertMany(movies);
-
-            // let results = await http.get("https://api.themoviedb.org/3/movie/945961/videos?language=en-US");
-            // let results = await http.get("https://api.themoviedb.org/3/movie/changes");
-            // let results = await http.get("https://api.themoviedb.org/3/certification/movie/list");
-            // console.log(results.data);
+            console.log("done");
         } catch (error) {
             console.error(error);
         }

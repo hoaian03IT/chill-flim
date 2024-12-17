@@ -5,6 +5,7 @@ const app = express();
 const redis_client = require("./db/redis_connect");
 const rateLimit = require("express-rate-limit");
 const cookieParser = require("cookie-parser");
+const bodyParser = require("body-parser");
 
 app.use(cors());
 app.use(
@@ -14,7 +15,10 @@ app.use(
 );
 // middleware
 app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
+// parse application/json
+app.use(bodyParser.json());
 app.use(cookieParser());
 
 // rate limiter
@@ -40,9 +44,10 @@ connect();
 //routes
 const auth_routes = require("./routes/auth.route.js");
 const user_routes = require("./routes/user.route.js");
-const { FilmController } = require("./controllers/film.controller.js");
+const payment_routes = require("./routes/payment.route.js");
 
 app.use("/v1/auth", auth_routes);
 app.use("/v1/user", user_routes);
+app.use("/v1/payment", payment_routes);
 
 app.listen(3000, () => console.log("server is running ..."));
