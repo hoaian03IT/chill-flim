@@ -2,8 +2,40 @@ const client = require("../helpers/paypal.js");
 const { performance } = require("perf_hooks");
 const paypal = require("@paypal/checkout-server-sdk");
 const sendErrorEmails = require("../helpers/nodemailer.js");
+const User = require("../models/user.model.js");
+const Transaction = require("../models/transaction.model.js");
+const mongoose = require("mongoose");
+const redis_client = require("../db/redis_connect.js");
 
 class PaymentController {
+    async getExpireOrder(req, res) {
+        try {
+            const { sub } = req.userData;
+
+            // Tìm giao dịch gần nhất của người dùng
+            let transaction = await Transaction.findOne({ user_id: sub }).sort({ createdAt: -1 });
+
+            if (!transaction) {
+                return res.status(404).json({ message: "Không tìm thấy giao dịch nào!" });
+            }
+
+            const now = moment();
+            const transactionTime = moment(transaction.createdAt);
+            const duration = moment.duration(now.diff(transactionTime));
+            const years = duration.asYears();
+
+            if (years >= 1) {
+                redis_client.set(`needpayment${sub}`, 1);
+                return res.status(200).json({
+                    yearsAgo: Math.floor(years),
+                });
+            } else {
+                return res.status(200).json({
+                    monthsAgo: Math.floor(duration.asMonths()),
+                });
+            }
+        } catch (error) {}
+    }
     async createOrder(req, res) {
         const { amount, currency } = req.body; // Lấy thông tin thanh toán từ request
 
@@ -59,6 +91,7 @@ class PaymentController {
 
     async completeOrder(req, res) {
         const { orderId } = req.body; // Lấy order ID từ request
+        const { sub } = req.userData; // Lấy user ID từ request
 
         try {
             // Xác nhận thanh toán trên PayPal
@@ -66,6 +99,10 @@ class PaymentController {
             request.requestBody({});
 
             const capture = await client.execute(request); // Gửi yêu cầu xác nhận tới PayPal
+
+            // cập nhật lại redis
+            redis_client.del(`needpayment${sub}`);
+
             res.status(200).json({
                 success: true,
                 data: capture.result, // Trả về kết quả thanh toán
@@ -75,11 +112,14 @@ class PaymentController {
 
             // Gửi email thông báo lỗi
             try {
-                await sendErrorEmails(
-                    ["user@example.com", "admin@example.com"], // Người nhận
-                    "Lỗi xác nhận thanh toán PayPal", // Tiêu đề email
-                    `Đã xảy ra lỗi khi xác nhận thanh toán: ${error.message}` // Nội dung email
-                );
+                const user = await User.findById(req.userData?.sub);
+
+                if (user.email)
+                    await sendErrorEmails(
+                        [user.email], // Người nhận
+                        "Lỗi xác nhận thanh toán PayPal", // Tiêu đề email
+                        `Đã xảy ra lỗi khi xác nhận thanh toán: ${error.message}` // Nội dung email
+                    );
             } catch (emailError) {
                 console.error("Error sending email:", emailError);
             }
