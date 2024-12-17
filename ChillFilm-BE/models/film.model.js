@@ -9,6 +9,7 @@ const filmSchema = new mongoose.Schema(
         duration: { type: Number },
         overview: { type: String, required: true },
         rate: [{ type: Number, required: true }],
+        poster: { type: String, required: true },
     },
     {
         timestamps: true,
